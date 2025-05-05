@@ -1,6 +1,6 @@
 package hudson.plugins.createjobadvanced;
 
-import com.cloudbees.hudson.plugins.folder.AbstractFolder;
+
 import hudson.Extension;
 import hudson.model.AbstractItem;
 import hudson.model.Hudson;
@@ -30,6 +30,7 @@ public class ItemListenerImpl extends ItemListener {
     private static final Logger log = Logger.getLogger(CreateJobAdvancedPlugin.class.getName());
 
     private MavenConfigurer mavenConfigurer = null;
+    private FolderConfigurer folderConfigurer = null;
 
     @DataBoundConstructor
     public ItemListenerImpl() {
@@ -37,13 +38,15 @@ public class ItemListenerImpl extends ItemListener {
         if (null != instance && null != instance.getPlugin("maven-plugin")) {
             mavenConfigurer = new MavenConfigurer();
         }
+        if (null != instance && null != instance.getPlugin("cloudbees-folder")) {
+            folderConfigurer = new FolderConfigurer();
+        }
     }
 
     @Override
     public void onRenamed(Item item, String oldName, String newName) {
         log.info("renamed " + oldName + " to " + newName);
 
-        if (!(item instanceof Job || item instanceof AbstractFolder)) return;
         final AbstractItem abstractItem = (AbstractItem) item;
 
         CreateJobAdvancedPlugin cja = getPlugin();
@@ -53,12 +56,12 @@ public class ItemListenerImpl extends ItemListener {
     }
 
     private CreateJobAdvancedPlugin getPlugin() {
-        Jenkins hudsonInstance = Hudson.getInstanceOrNull();
-        if (hudsonInstance == null) {
+        Jenkins instance = Jenkins.getInstanceOrNull();
+        if (null == instance) {
             log.warning("Hudson instance is null");
             return null;
         }
-        return hudsonInstance.getPlugin(CreateJobAdvancedPlugin.class);
+        return instance.getPlugin(CreateJobAdvancedPlugin.class);
     }
 
     @Override
@@ -179,9 +182,9 @@ public class ItemListenerImpl extends ItemListener {
             if (abstractItem.getName().indexOf(" ") != -1) {
                 if (abstractItem instanceof Job) {
                     renameJob((Job<?, ?>) abstractItem);
-                } else {
-                    renameJob((AbstractFolder<?>) abstractItem);
-                }
+                } else if (null != folderConfigurer) {
+                    folderConfigurer.renameJob(abstractItem);
+                }                
             }
         } catch (IOException e) {
             log.log(Level.SEVERE, "error during rename", e);
@@ -190,10 +193,6 @@ public class ItemListenerImpl extends ItemListener {
 
     private void renameJob(final Job<?, ?> job) throws IOException {
         job.renameTo(job.getName().replaceAll(" ", "-"));
-    }
-
-    private void renameJob(final AbstractFolder<?> folder) throws IOException {
-        folder.renameTo(folder.getName().replaceAll(" ", "-"));
     }
 
     private void securityGrantPermissions(
@@ -218,7 +217,10 @@ public class ItemListenerImpl extends ItemListener {
             if (abstractItem instanceof Job) {
                 addAuthorizationMatrixProperty((Job<?, ?>) abstractItem, permissions);
                 log.info("Granting rights to [" + sid + "] for newly-created job " + abstractItem.getDisplayName());
-            } else {
+            } 
+              else if (null != folderConfigurer) {
+                    folderConfigurer.renameJob(abstractItem);
+              }  
                 addAuthorizationMatrixProperty((AbstractFolder<?>) abstractItem, permissions);
                 log.info("Granting rights to [" + sid + "] for newly-created folder " + abstractItem.getDisplayName());
             }
@@ -234,35 +236,7 @@ public class ItemListenerImpl extends ItemListener {
         job.addProperty(authProperty);
     }
 
-    private void addAuthorizationMatrixProperty(
-            AbstractFolder<?> folder, Map<Permission, Set<PermissionEntry>> permissions) throws IOException {
-        Jenkins instance = Jenkins.getInstanceOrNull();
-        if (instance == null) {
-            log.warning("Jenkins instance is null");
-            return;
-        }
-
-        com.cloudbees.hudson.plugins.folder.properties.AuthorizationMatrixProperty.DescriptorImpl propDescriptor =
-                (com.cloudbees.hudson.plugins.folder.properties.AuthorizationMatrixProperty.DescriptorImpl)
-                        instance.getDescriptor(
-                                com.cloudbees.hudson.plugins.folder.properties.AuthorizationMatrixProperty.class);
-
-        if (propDescriptor == null) {
-            log.warning("AuthorizationMatrixProperty.DescriptorImpl is null");
-            return;
-        }
-
-        com.cloudbees.hudson.plugins.folder.properties.AuthorizationMatrixProperty authProperty =
-                propDescriptor.create();
-        for (Map.Entry<Permission, Set<PermissionEntry>> entry : permissions.entrySet()) {
-            Permission perm = entry.getKey();
-            for (PermissionEntry permEntry : entry.getValue()) {
-                authProperty.add(perm, permEntry);
-            }
-        }
-        folder.addProperty(authProperty);
-    }
-
+    
     private Map<Permission, Set<PermissionEntry>> initPermissions(final AbstractItem abstractItem) {
 
         Map<Permission, Set<PermissionEntry>> permissions = null;
