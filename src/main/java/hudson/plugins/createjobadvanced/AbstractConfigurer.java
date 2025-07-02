@@ -107,7 +107,7 @@ public abstract class AbstractConfigurer<T extends AbstractItem, A> {
         CreateJobAdvancedPlugin result = null;
         Jenkins instance = Jenkins.getInstanceOrNull();
         if (null != instance) {
-            result = instance.getPlugin(CreateJobAdvancedPlugin.class);
+            result = CreateJobAdvancedPlugin.get();
         }
         return result;
     }

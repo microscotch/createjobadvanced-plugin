@@ -5,45 +5,45 @@
 	<f:section title="${%CJAInstallations}">
 	
 		<f:entry title="${%security}" help="/plugin/createjobadvanced/security.html">
-			<f:checkbox name="cja.security" checked="${it.autoOwnerRights}" />
+			<f:checkbox field="autoOwnerRights" name="cja.autoOwnerRights" />
 		</f:entry>
 		<f:entry title="${%public}" help="/plugin/createjobadvanced/public.html">
-			<f:checkbox name="cja.public" checked="${it.autoPublicBrowse}" />
+			<f:checkbox field="autoPublicBrowse" name="cja.autoPublicBrowse" />
 		</f:entry>
 		<f:entry title="${%jobspacesinname}" help="/plugin/createjobadvanced/help-replaceSpaceInName.html">
-			<f:checkbox name="cja.jobspacesinname" checked="${it.replaceSpace}" />
+			<f:checkbox field="replaceSpace" name="cja.replaceSpace" />
 		</f:entry>
         <f:entry title="${%mvnArchivingDisabled}" help="/plugin/createjobadvanced/help-mvnArchivingDisabled.html">
-           <f:checkbox name="cja.mvnArchivingDisabled" checked="${it.isMvnArchivingDisabled()}" />
+           <f:checkbox field="mvnArchivingDisabled" name="cja.mvnArchivingDisabled" />
         </f:entry>
         <f:entry title="${%mvnPerModuleEmail}" help="/plugin/createjobadvanced/help-mvnPerModuleEmail.html">
-           <f:checkbox name="cja.mvnPerModuleEmail" checked="${it.isMvnPerModuleEmail()}" />
+           <f:checkbox field="mvnPerModuleEmail" name="cja.mvnPerModuleEmail" />
         </f:entry>
 		<f:block>
 			<p:blockWrapper>
-				<f:optionalBlock name="cja.activeLogRotator" title="${%logrotator}" checked="${it.activeLogRotator}">
+				<f:optionalBlock name="cja.activeLogRotator" title="${%logrotator}" field="activeLogRotator" inline="true">
 					<f:entry title="${%daysToKeep}" description="${%logrotatorDesc}">
-						<f:textbox name="cja.daysToKeep" value="${it.daysToKeep}" />
+						<f:textbox name="cja.daysToKeep" field="daysToKeep" />
 					</f:entry>
 					<f:entry title="${%numToKeep}" description="${%logrotatorDesc}">
-						<f:textbox name="cja.numToKeep" value="${it.numToKeep}" />
+						<f:textbox name="cja.numToKeep" field="numToKeep" />
 					</f:entry>
 					<f:entry title="${%artifactDaysToKeep}" description="${%logrotatorDesc}">
-						<f:textbox name="cja.artifactDaysToKeep" value="${it.artifactDaysToKeep}" />
+						<f:textbox name="cja.artifactDaysToKeep" field="artifactDaysToKeep" />
 					</f:entry>
 					<f:entry title="${%artifactNumToKeep}" description="${%logrotatorDesc}">
-						<f:textbox name="cja.artifactNumToKeep" value="${it.artifactNumToKeep}" />
+						<f:textbox name="cja.artifactNumToKeep" field="artifactNumToKeep" />
 					</f:entry>
 				</f:optionalBlock>
 			</p:blockWrapper>
 		</f:block>
 		<f:block>
 			<p:blockWrapper>
-			  <f:optionalBlock name="cja.activeDynamicPermissions"
-					title="${%dynamicPermissions}" checked="${it.activeDynamicPermissions}" help="/plugin/createjobadvanced/dynamic_permission_help.html"> 
+			  <f:optionalBlock name="cja.activeDynamicPermissions" inline="true"
+					title="${%dynamicPermissions}" field="activeDynamicPermissions" help="/plugin/createjobadvanced/dynamic_permission_help.html"> 
 					
 					<f:entry title="${%extractPattern}">
-						<f:textbox name="cja.extractPattern" value="${it.extractPattern}" />
+						<f:textbox name="cja.extractPattern" field="extractPattern" />
 					</f:entry>
 					
 					<f:entry title="${groups}">

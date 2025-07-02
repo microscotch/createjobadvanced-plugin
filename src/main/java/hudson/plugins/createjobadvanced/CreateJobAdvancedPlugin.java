@@ -1,12 +1,12 @@
 package hudson.plugins.createjobadvanced;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.Plugin;
-import hudson.model.Descriptor.FormException;
+import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
-import jakarta.servlet.ServletException;
-import java.io.IOException;
+import jenkins.model.GlobalConfiguration;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,16 +14,17 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * @author Bertrand Gressier
  *
  */
-public class CreateJobAdvancedPlugin extends Plugin {
+@Extension
+public class CreateJobAdvancedPlugin extends GlobalConfiguration {
 
     private static final Logger log = Logger.getLogger(CreateJobAdvancedPlugin.class.getName());
 
@@ -43,77 +44,74 @@ public class CreateJobAdvancedPlugin extends Plugin {
     private boolean mvnArchivingDisabled;
     private boolean mvnPerModuleEmail;
 
-    private final List<DynamicPermissionConfig> dynamicPermissionConfigs = new ArrayList<>();
+    private List<DynamicPermissionConfig> dynamicPermissionConfigs = new ArrayList<>();
 
-    /**
-     * @return the dynamicPermissionConfigs
-     */
-    public List<DynamicPermissionConfig> getDynamicPermissionConfigs() {
-        return dynamicPermissionConfigs;
+    /** @return the singleton instance */
+    public static CreateJobAdvancedPlugin get() {
+        return ExtensionList.lookupSingleton(CreateJobAdvancedPlugin.class);
     }
 
-    @Deprecated
-    public CreateJobAdvancedPlugin() {}
-
-    @Override
-    public void start() throws Exception {
-        super.start();
+    public CreateJobAdvancedPlugin() {
         log.info("Create job advanced plugin started ...");
         load();
     }
 
-    @Override
-    public void configure(StaplerRequest2 req, JSONObject formData)
-            throws IOException, ServletException, FormException {
+    // @Override
+    // public void start() throws Exception {
+    //     super.start();
+    //     
+    //     load();
+    // }
+        
 
-        autoOwnerRights = formData.optBoolean("security", false);
-        autoPublicBrowse = formData.optBoolean("public", false);
-        replaceSpace = formData.optBoolean("jobspacesinname", false);
 
-        mvnArchivingDisabled = formData.optBoolean("mvnArchivingDisabled", false);
-        mvnPerModuleEmail = formData.optBoolean("mvnPerModuleEmail", false);
+    // @Override
+    // public boolean configure(StaplerRequest2 req, JSONObject formData)
+    //         throws FormException {
 
-        final JSONObject activeLogRotatorJson = formData.optJSONObject("activeLogRotator");
+    //     boolean result = false;
 
-        if (activeLogRotatorJson != null) {
-            activeLogRotator = true;
-            daysToKeep = activeLogRotatorJson.optInt("daysToKeep", -1);
-            numToKeep = activeLogRotatorJson.optInt("numToKeep", -1);
-            artifactDaysToKeep = activeLogRotatorJson.optInt("artifactDaysToKeep", -1);
-            artifactNumToKeep = activeLogRotatorJson.optInt("artifactNumToKeep", -1);
-        } else {
-            activeLogRotator = false;
-        }
+    //     // autoOwnerRights = formData.optBoolean("security", false);
+    //     // autoPublicBrowse = formData.optBoolean("public", false);
+    //     // replaceSpace = formData.optBoolean("jobspacesinname", false);
 
-        final JSONObject activeDynamicPermissionsJson = formData.optJSONObject("activeDynamicPermissions");
+    //     // mvnArchivingDisabled = formData.optBoolean("mvnArchivingDisabled", false);
+    //     // mvnPerModuleEmail = formData.optBoolean("mvnPerModuleEmail", false);
 
-        if (activeDynamicPermissionsJson != null) {
-            activeDynamicPermissions = true;
-            extractPattern = activeDynamicPermissionsJson.optString("extractPattern", "");
+    //     //final JSONObject activeLogRotatorJson = formData.optJSONObject("activeLogRotator");
 
-            dynamicPermissionConfigs.clear();
-            final Object cfgs = activeDynamicPermissionsJson.get("cfgs");
-            if (cfgs instanceof JSONArray) {
-                final JSONArray jsonArray = (JSONArray) cfgs;
-                for (Object object : jsonArray) {
-                    addDynamicPermission(req, (JSONObject) object);
-                }
-            } else {
-                // there might be only one single dynamic permission
-                addDynamicPermission(req, (JSONObject) cfgs);
-            }
+    //     final JSONObject activeDynamicPermissionsJson = formData.optJSONObject("activeDynamicPermissions");
 
-        } else {
-            activeDynamicPermissions = false;
-            extractPattern = null;
-            dynamicPermissionConfigs.clear();
-        }
+    //     if (activeDynamicPermissionsJson != null) {
+    //         activeDynamicPermissions = true;
+    //         //extractPattern = activeDynamicPermissionsJson.optString("extractPattern", "");
 
-        save();
-    }
+    //         dynamicPermissionConfigs.clear();
+    //         final Object cfgs = activeDynamicPermissionsJson.get("cfgs");
+    //         if (cfgs instanceof JSONArray) {
+    //             final JSONArray jsonArray = (JSONArray) cfgs;
+    //             for (Object object : jsonArray) {
+    //                 addDynamicPermission(req, (JSONObject) object);
+    //             }
+    //         } else {
+    //             // there might be only one single dynamic permission
+    //             addDynamicPermission(req, (JSONObject) cfgs);
+    //         }
+
+    //     } else {
+    //         activeDynamicPermissions = false;
+    //         extractPattern = null;
+    //         dynamicPermissionConfigs.clear();
+    //     }
+
+    //     save();
+    //     result = true;
+
+    //     return result;
+    // }
 
     /**
-     * adds a dynamic permission configuration with the data extracted form the
+     * adds a dynamic permission configuration with the data extracted from the
      * jsonObject.
      *
      * @param req
@@ -194,12 +192,24 @@ public class CreateJobAdvancedPlugin extends Plugin {
         return autoOwnerRights;
     }
 
+    @DataBoundSetter
+    public void setAutoOwnerRights(boolean autoOwnerRights) {
+        this.autoOwnerRights = autoOwnerRights;
+        save();
+    }
+
     /**
      *
      * @return true when automatic public browse assigment option is activated
      */
     public boolean isAutoPublicBrowse() {
         return autoPublicBrowse;
+    }
+
+    @DataBoundSetter
+    public void setAutoPublicBrowse(boolean autoPublicBrowse) {
+        this.autoPublicBrowse = autoPublicBrowse;
+        save();
     }
 
     /**
@@ -210,12 +220,31 @@ public class CreateJobAdvancedPlugin extends Plugin {
         return replaceSpace;
     }
 
+    @DataBoundSetter
+    public void setReplaceSpace(boolean replaceSpace) {
+        this.replaceSpace = replaceSpace;
+        save();
+    }
+
     /**
      *
      * @return true when log rotator option is activated
      */
     public boolean isActiveLogRotator() {
-        return activeLogRotator;
+        //this.activeLogRotator = (getDaysToKeep() !=-1 || getNumToKeep() != -1 || getArtifactDaysToKeep()!=-1 || getArtifactNumToKeep() !=-1);
+        return this.activeLogRotator;
+    }
+
+    @DataBoundSetter
+    public void setActiveLogRotator(boolean activeLogRotator) {
+        this.activeLogRotator = activeLogRotator;
+        if(!activeLogRotator) {
+            setNumToKeep(-1);
+            setDaysToKeep(-1);
+            setArtifactNumToKeep(-1);
+            setArtifactDaysToKeep(-1);
+        }
+        save();
     }
 
     /**
@@ -226,12 +255,24 @@ public class CreateJobAdvancedPlugin extends Plugin {
         return daysToKeep;
     }
 
+    @DataBoundSetter
+    public void setDaysToKeep(int daysToKeep) {
+        this.daysToKeep = daysToKeep;
+        save();
+    }
+
     /**
      *
      * @return the number of build to be kept
      */
     public int getNumToKeep() {
         return numToKeep;
+    }
+
+    @DataBoundSetter
+    public void setNumToKeep(int numToKeep) {
+        this.numToKeep = numToKeep;
+        save();
     }
 
     /**
@@ -242,12 +283,24 @@ public class CreateJobAdvancedPlugin extends Plugin {
         return artifactDaysToKeep;
     }
 
+    @DataBoundSetter
+    public void setArtifactDaysToKeep(int artifactDaysToKeep) {
+        this.artifactDaysToKeep = artifactDaysToKeep;
+        save();
+    }
+
     /**
      *
      * @return the number of build to keep with artifacts
      */
     public int getArtifactNumToKeep() {
         return artifactNumToKeep;
+    }
+
+    @DataBoundSetter
+    public void setArtifactNumToKeep(int artifactNumToKeep) {
+        this.artifactNumToKeep = artifactNumToKeep;
+        save();
     }
 
     /**
@@ -257,11 +310,23 @@ public class CreateJobAdvancedPlugin extends Plugin {
         return extractPattern;
     }
 
+    @DataBoundSetter
+    public void setExtractPattern(String extractPattern) {
+        this.extractPattern = extractPattern;
+        save();
+    }
+
     /**
      * @return the activeDynamicPermissions
      */
     public boolean isActiveDynamicPermissions() {
         return activeDynamicPermissions;
+    }
+
+    @DataBoundSetter
+    public void setActiveDynamicPermissions(boolean activeDynamicPermissions) {
+        this.activeDynamicPermissions = activeDynamicPermissions;
+        save();
     }
 
     /**
@@ -272,6 +337,12 @@ public class CreateJobAdvancedPlugin extends Plugin {
         return mvnArchivingDisabled;
     }
 
+    @DataBoundSetter
+    public void setMvnArchivingDisabled(boolean mvnArchivingDisabled) {
+        this.mvnArchivingDisabled = mvnArchivingDisabled;
+        save();
+    }
+
     /**
      *
      * @return
@@ -279,4 +350,23 @@ public class CreateJobAdvancedPlugin extends Plugin {
     public boolean isMvnPerModuleEmail() {
         return mvnPerModuleEmail;
     }
+
+    @DataBoundSetter
+    public void setMvnPerModuleEmail(boolean mvnPerModuleEmail) {
+        this.mvnPerModuleEmail = mvnPerModuleEmail;
+        save();
+    }
+
+    /**
+     * @return the dynamicPermissionConfigs
+     */
+    public List<DynamicPermissionConfig> getDynamicPermissionConfigs() {
+        return dynamicPermissionConfigs;
+    }
+
+    public void setDynamicPermissionConfigs(List<DynamicPermissionConfig> dynamicPermissionConfigs) {
+        this.dynamicPermissionConfigs = dynamicPermissionConfigs;
+        save();
+    }
+
 }
