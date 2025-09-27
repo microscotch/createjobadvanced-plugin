@@ -1,7 +1,7 @@
 ARG BASE_IMAGE=ubuntu
 FROM ${BASE_IMAGE}
-ARG M2_BIN=https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
-ARG USER_CI=jenkinsci
+ARG M2_BIN
+ARG USER_CI
 ARG USER_UID
 ARG USER_GID
 # Install required plugin development package
